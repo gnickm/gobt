@@ -2,6 +2,7 @@ package bencode
 
 import (
 	"fmt"
+	"sort"
 )
 
 type BEncodable interface {
@@ -32,6 +33,27 @@ func (bel BEncodeList) BEString() string {
 	bestr := "l"
 	for _, bencodable := range bel {
 		bestr += bencodable.BEString()
+	}
+	return bestr + "e"
+}
+
+// BEncodeDictionary type -------------------------------------------
+
+type BEncodeDictionary map[string]BEncodable
+
+func (bed BEncodeDictionary) BEString() string {
+	bestr := "d"
+
+	// BitTorrent spec says keys should be sorted
+	keys := make([]string, 0, len(bed))
+	for key := range bed {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	for _, dictKey := range keys {
+		bestr += BEncodeString(dictKey).BEString()
+		bestr += bed[dictKey].BEString()
 	}
 	return bestr + "e"
 }
