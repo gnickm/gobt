@@ -23,3 +23,15 @@ type BEncodeString string
 func (bes BEncodeString) BEString() string {
 	return fmt.Sprintf("%d:%s", len(bes), bes)
 }
+
+// BEncodeList type -------------------------------------------------
+
+type BEncodeList []BEncodable
+
+func (bel BEncodeList) BEString() string {
+	bestr := "l"
+	for _, bencodable := range bel {
+		bestr += bencodable.BEString()
+	}
+	return bestr + "e"
+}

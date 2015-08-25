@@ -23,3 +23,23 @@ func TestBEncodeString(t *testing.T) {
 		t.Errorf("Expected BEString() of '12:Hello World!', was '%s'", beStr.BEString())
 	}
 }
+
+func TestBEncodeList(t *testing.T) {
+	beList := BEncodeList{BEncodeInteger(123), BEncodeString("Hello World!")}
+	if len(beList) != 2 {
+		t.Errorf("Expected length of 2, was '%d'", len(beList))
+	}
+	if beList.BEString() != "li123e12:Hello World!e" {
+		t.Errorf("Expected BEString() of 'li123e12:Hello World!e', was '%s'", beList.BEString())
+	}
+
+	// Can append lists to lists
+	beList = append(beList, BEncodeList{BEncodeInteger(456), BEncodeString("nested")})
+
+	if len(beList) != 3 {
+		t.Errorf("Expected length of 3, was '%d'", len(beList))
+	}
+	if beList.BEString() != "li123e12:Hello World!li456e6:nestedee" {
+		t.Errorf("Expected BEString() of 'li123e12:Hello World!li456e6:nestede', was '%s'", beList.BEString())
+	}
+}
