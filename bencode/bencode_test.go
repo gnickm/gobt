@@ -79,3 +79,37 @@ func TestBEncodeDictionaryKeySorting(t *testing.T) {
 	}
 
 }
+
+func TestDecodeHappyPath(t *testing.T) {
+	beInteger := Decode("i1234e").(BEncodeInteger)
+	if beInteger != 1234 {
+		t.Errorf("Expected value of 1234, was '%d'", beInteger)
+	}
+
+	beString := Decode("12:Hello World!").(BEncodeString)
+	if beString != "Hello World!" {
+		t.Errorf("Expected value of 'Hello World!', was '%s'", beString)
+	}
+
+	beList := Decode("li123e12:Hello World!e").(BEncodeList)
+	if len(beList) != 2 {
+		t.Errorf("Expected length of 2, was '%d'", len(beList))
+	}
+	if beList[0].(BEncodeInteger) != 123 {
+		t.Errorf("Expected value of 123, was '%d'", beList[0].(BEncodeInteger))
+	}
+	if beList[1].(BEncodeString) != "Hello World!" {
+		t.Errorf("Expected value of 'Hello World!', was '%s'", beList[1].(BEncodeString))
+	}
+
+	beDict := Decode("d4:KeyAi123e4:KeyB12:Hello World!e").(BEncodeDictionary)
+	if len(beDict) != 2 {
+		t.Errorf("Expected length of 2, was '%d'", len(beDict))
+	}
+	if beDict["KeyA"].(BEncodeInteger) != 123 {
+		t.Errorf("Expected value of 123, was '%d'", beDict["KeyA"].(BEncodeInteger))
+	}
+	if beDict["KeyB"].(BEncodeString) != "Hello World!" {
+		t.Errorf("Expected value of 'Hello World!', was '%s'", beDict["KeyB"].(BEncodeString))
+	}
+}

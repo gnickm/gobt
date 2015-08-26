@@ -3,6 +3,7 @@ package bencode
 import (
 	"fmt"
 	"sort"
+	"strconv"
 )
 
 type BEncodable interface {
@@ -56,4 +57,60 @@ func (bed BEncodeDictionary) BEString() string {
 		bestr += bed[dictKey].BEString()
 	}
 	return bestr + "e"
+}
+
+// Decode function --------------------------------------------------
+
+func Decode(beString string) BEncodable {
+	be, _ := doDecode(beString, 0)
+	return be
+}
+
+func doDecode(beString string, startIndex int) (BEncodable, int) {
+	if len(beString) == 0 {
+		return nil, 0
+	}
+	if beString[startIndex] == 'i' {
+		// Handle integer
+		endIndex := findChar(beString, startIndex, 'e')
+		i, _ := strconv.Atoi(beString[startIndex+1 : endIndex])
+		return BEncodeInteger(i), endIndex + 1
+	} else if beString[startIndex] == 'l' {
+		// Handle list
+		beList := BEncodeList{}
+		startIndex++
+		for beString[startIndex] != 'e' {
+			var beListItem BEncodable
+			beListItem, startIndex = doDecode(beString, startIndex)
+			beList = append(beList, beListItem)
+		}
+		return beList, startIndex + 1
+	} else if beString[startIndex] == 'd' {
+		// Handle dictionary
+		beDict := BEncodeDictionary{}
+		startIndex++
+		for beString[startIndex] != 'e' {
+			var beKey, beValue BEncodable
+			beKey, startIndex = doDecode(beString, startIndex)
+			beValue, startIndex = doDecode(beString, startIndex)
+			beKeyStr := string(beKey.(BEncodeString))
+			beDict[beKeyStr] = beValue
+		}
+		return beDict, startIndex + 1
+	} else {
+		// Handle string
+		endIndex := findChar(beString, startIndex, ':')
+		strLength, _ := strconv.Atoi(beString[startIndex:endIndex])
+		startIndex = endIndex + 1
+		return BEncodeString(beString[startIndex : startIndex+strLength]), startIndex + strLength
+	}
+}
+
+func findChar(beString string, startIndex int, char uint8) int {
+	for i := startIndex; i < len(beString); i++ {
+		if beString[i] == char {
+			return i
+		}
+	}
+	return startIndex
 }
