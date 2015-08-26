@@ -81,17 +81,32 @@ func TestBEncodeDictionaryKeySorting(t *testing.T) {
 }
 
 func TestDecodeHappyPath(t *testing.T) {
-	beInteger := Decode("i1234e").(BEncodeInteger)
+	var err error
+	var be BEncodable
+
+	be, err = Decode("i1234e")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	beInteger := be.(BEncodeInteger)
 	if beInteger != 1234 {
 		t.Errorf("Expected value of 1234, was '%d'", beInteger)
 	}
 
-	beString := Decode("12:Hello World!").(BEncodeString)
+	be, err = Decode("12:Hello World!")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	beString := be.(BEncodeString)
 	if beString != "Hello World!" {
 		t.Errorf("Expected value of 'Hello World!', was '%s'", beString)
 	}
 
-	beList := Decode("li123e12:Hello World!e").(BEncodeList)
+	be, err = Decode("li123e12:Hello World!e")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	beList := be.(BEncodeList)
 	if len(beList) != 2 {
 		t.Errorf("Expected length of 2, was '%d'", len(beList))
 	}
@@ -102,7 +117,11 @@ func TestDecodeHappyPath(t *testing.T) {
 		t.Errorf("Expected value of 'Hello World!', was '%s'", beList[1].(BEncodeString))
 	}
 
-	beDict := Decode("d4:KeyAi123e4:KeyB12:Hello World!e").(BEncodeDictionary)
+	be, err = Decode("d4:KeyAi123e4:KeyB12:Hello World!e")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	beDict := be.(BEncodeDictionary)
 	if len(beDict) != 2 {
 		t.Errorf("Expected length of 2, was '%d'", len(beDict))
 	}
@@ -111,5 +130,109 @@ func TestDecodeHappyPath(t *testing.T) {
 	}
 	if beDict["KeyB"].(BEncodeString) != "Hello World!" {
 		t.Errorf("Expected value of 'Hello World!', was '%s'", beDict["KeyB"].(BEncodeString))
+	}
+}
+
+func TestDecodeDeepEmbedsAndWeirdStuff(t *testing.T) {
+	var err error
+	var be BEncodable
+
+	be, err = Decode("lllll9:very deepeeeee")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	beList := be.(BEncodeList)
+	if len(beList) != 1 {
+		t.Errorf("Expected length of 1, was '%d'", len(beList))
+	}
+	if beList[0].(BEncodeList)[0].(BEncodeList)[0].(BEncodeList)[0].(BEncodeList)[0].(BEncodeString) != "very deep" {
+		t.Error("Expected value of 'very deep'")
+	}
+
+	be, err = Decode("i1234eEverything after valid BEncode will be ignored with no error")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	beInteger := be.(BEncodeInteger)
+	if beInteger != 1234 {
+		t.Errorf("Expected value of 1234, was '%d'", beInteger)
+	}
+
+	// Lists can be empty
+	be, err = Decode("le")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	beList = be.(BEncodeList)
+	if len(beList) != 0 {
+		t.Errorf("Expected length of 0, was '%d'", len(beList))
+	}
+
+	// Dictionaries can be empty
+	be, err = Decode("de")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	beDict := be.(BEncodeDictionary)
+	if len(beDict) != 0 {
+		t.Errorf("Expected length of 0, was '%d'", len(beDict))
+	}
+}
+
+func TestDecodeGeneralFailureModes(t *testing.T) {
+	var err error
+
+	_, err = Decode("")
+	if err == nil {
+		t.Error("Expected error when decoding empty string")
+	}
+
+	_, err = Decode("This is not the BEncode you are looking for")
+	if err == nil {
+		t.Error("Expected error when decoding bogus string")
+	}
+}
+
+func TestDecodeIntegerFailureModes(t *testing.T) {
+	var err error
+	_, err = Decode("i123")
+	if err == nil {
+		t.Error("Expected error when decoding unfinished integer")
+	}
+
+	_, err = Decode("ie")
+	if err == nil {
+		t.Error("Expected error when decoding integer with no numeric")
+	}
+
+	_, err = Decode("i1a2e")
+	if err == nil {
+		t.Error("Expected error when decoding integer with non numeric")
+	}
+}
+
+func TestDecodeStringFailureModes(t *testing.T) {
+	var err error
+	_, err = Decode("4fail")
+	if err == nil {
+		t.Error("Expected error when decoding string with no separator")
+	}
+
+	_, err = Decode(":fail")
+	if err == nil {
+		t.Error("Expected error when decoding string with no char count")
+	}
+
+	_, err = Decode("4:fai")
+	if err == nil {
+		t.Error("Expected error when decoding string that is too short")
+	}
+}
+
+func TestDecodeListFailureModes(t *testing.T) {
+	var err error
+	_, err = Decode("li1ei2ei3e")
+	if err == nil {
+		t.Error("Expected error when decoding list with no terminator")
 	}
 }
