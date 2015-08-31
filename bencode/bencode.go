@@ -1,4 +1,4 @@
-package bencode
+package BE
 
 import (
 	"errors"
@@ -8,42 +8,42 @@ import (
 )
 
 type BEncodable interface {
-	BEString() string
+	Encode() string
 }
 
-// BEncodeInteger type ----------------------------------------------
+// BEInteger type ----------------------------------------------
 
-type BEncodeInteger int
+type BEInteger int
 
-func (bei BEncodeInteger) BEString() string {
+func (bei BEInteger) Encode() string {
 	return fmt.Sprintf("i%de", bei)
 }
 
-// BEncodeString type -----------------------------------------------
+// BEString type -----------------------------------------------
 
-type BEncodeString string
+type BEString string
 
-func (bes BEncodeString) BEString() string {
+func (bes BEString) Encode() string {
 	return fmt.Sprintf("%d:%s", len(bes), bes)
 }
 
-// BEncodeList type -------------------------------------------------
+// BEList type -------------------------------------------------
 
-type BEncodeList []BEncodable
+type BEList []BEncodable
 
-func (bel BEncodeList) BEString() string {
+func (bel BEList) Encode() string {
 	bestr := "l"
 	for _, bencodable := range bel {
-		bestr += bencodable.BEString()
+		bestr += bencodable.Encode()
 	}
 	return bestr + "e"
 }
 
-// BEncodeDictionary type -------------------------------------------
+// BEDictionary type -------------------------------------------
 
-type BEncodeDictionary map[string]BEncodable
+type BEDictionary map[string]BEncodable
 
-func (bed BEncodeDictionary) BEString() string {
+func (bed BEDictionary) Encode() string {
 	bestr := "d"
 
 	// BitTorrent spec says keys should be sorted
@@ -54,8 +54,8 @@ func (bed BEncodeDictionary) BEString() string {
 	sort.Strings(keys)
 
 	for _, dictKey := range keys {
-		bestr += BEncodeString(dictKey).BEString()
-		bestr += bed[dictKey].BEString()
+		bestr += BEString(dictKey).Encode()
+		bestr += bed[dictKey].Encode()
 	}
 	return bestr + "e"
 }
@@ -69,10 +69,10 @@ func Decode(beString string) (BEncodable, error) {
 
 func doDecode(beString string, startIndex int) (BEncodable, int, error) {
 	if len(beString) == 0 {
-		return nil, 0, errors.New("bencode: cannot decode empty string")
+		return nil, 0, errors.New("BE: cannot decode empty string")
 	}
 	if startIndex > len(beString) {
-		return nil, startIndex, errors.New("bencode: unexpected end of string to be decoded")
+		return nil, startIndex, errors.New("BE: unexpected end of string to be decoded")
 	}
 	if beString[startIndex] == 'i' {
 		// Handle integer
@@ -84,11 +84,11 @@ func doDecode(beString string, startIndex int) (BEncodable, int, error) {
 		if err != nil {
 			return nil, startIndex, err
 		} else {
-			return BEncodeInteger(i), endIndex + 1, nil
+			return BEInteger(i), endIndex + 1, nil
 		}
 	} else if beString[startIndex] == 'l' {
 		// Handle list
-		beList := BEncodeList{}
+		beList := BEList{}
 		startIndex++
 		for beString[startIndex] != 'e' {
 			var beListItem BEncodable
@@ -102,19 +102,19 @@ func doDecode(beString string, startIndex int) (BEncodable, int, error) {
 			// Handle falling off the edge of the string here, otherwise
 			// our for condition blows up
 			if startIndex >= len(beString) {
-				return nil, startIndex, errors.New("bencode: unexpected end of string while trying to find list closure")
+				return nil, startIndex, errors.New("BE: unexpected end of string while trying to find list closure")
 			}
 		}
 		return beList, startIndex + 1, nil
 	} else if beString[startIndex] == 'd' {
 		// Handle dictionary
-		beDict := BEncodeDictionary{}
+		beDict := BEDictionary{}
 		startIndex++
 		for beString[startIndex] != 'e' {
 			var beKey, beValue BEncodable
 			beKey, startIndex, _ = doDecode(beString, startIndex)
 			beValue, startIndex, _ = doDecode(beString, startIndex)
-			beKeyStr := string(beKey.(BEncodeString))
+			beKeyStr := string(beKey.(BEString))
 			beDict[beKeyStr] = beValue
 		}
 		return beDict, startIndex + 1, nil
@@ -130,9 +130,9 @@ func doDecode(beString string, startIndex int) (BEncodable, int, error) {
 		}
 		startIndex = endIndex + 1
 		if startIndex+strLength > len(beString) {
-			return nil, startIndex, errors.New("bencode: string length was greater than encoded string size")
+			return nil, startIndex, errors.New("BE: string length was greater than encoded string size")
 		} else {
-			return BEncodeString(beString[startIndex : startIndex+strLength]), startIndex + strLength, nil
+			return BEString(beString[startIndex : startIndex+strLength]), startIndex + strLength, nil
 		}
 	}
 }
@@ -143,5 +143,5 @@ func findChar(beString string, startIndex int, char uint8) (int, error) {
 			return i, nil
 		}
 	}
-	return startIndex, errors.New("bencode: failed to find expected terminating character")
+	return startIndex, errors.New("BE: failed to find expected terminating character")
 }

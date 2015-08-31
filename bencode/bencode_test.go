@@ -1,81 +1,81 @@
-package bencode
+package BE
 
 import (
 	"testing"
 )
 
-func TestBEncodeIntegerBasics(t *testing.T) {
-	beInt := BEncodeInteger(123)
+func TestBEIntegerBasics(t *testing.T) {
+	beInt := BEInteger(123)
 	if beInt != 123 {
 		t.Errorf("Expected Value of '123', was '%s'", beInt)
 	}
-	if beInt.BEString() != "i123e" {
-		t.Errorf("Expected BEString() of 'i123e', was '%s'", beInt.BEString())
+	if beInt.Encode() != "i123e" {
+		t.Errorf("Expected Encode() of 'i123e', was '%s'", beInt.Encode())
 	}
 }
 
-func TestBEncodeStringBasics(t *testing.T) {
-	beStr := BEncodeString("Hello World!")
+func TestBEStringBasics(t *testing.T) {
+	beStr := BEString("Hello World!")
 	if beStr != "Hello World!" {
 		t.Errorf("Expected Value of 'Hello World', was '%s'", beStr)
 	}
-	if beStr.BEString() != "12:Hello World!" {
-		t.Errorf("Expected BEString() of '12:Hello World!', was '%s'", beStr.BEString())
+	if beStr.Encode() != "12:Hello World!" {
+		t.Errorf("Expected Encode() of '12:Hello World!', was '%s'", beStr.Encode())
 	}
 }
 
-func TestBEncodeListBasics(t *testing.T) {
-	beList := BEncodeList{BEncodeInteger(123), BEncodeString("Hello World!")}
+func TestBEListBasics(t *testing.T) {
+	beList := BEList{BEInteger(123), BEString("Hello World!")}
 	if len(beList) != 2 {
 		t.Errorf("Expected length of 2, was '%d'", len(beList))
 	}
-	if beList.BEString() != "li123e12:Hello World!e" {
-		t.Errorf("Expected BEString() of 'li123e12:Hello World!e', was '%s'", beList.BEString())
+	if beList.Encode() != "li123e12:Hello World!e" {
+		t.Errorf("Expected Encode() of 'li123e12:Hello World!e', was '%s'", beList.Encode())
 	}
 
 	// Can append lists to lists
-	beList = append(beList, BEncodeList{BEncodeInteger(456), BEncodeString("nested")})
+	beList = append(beList, BEList{BEInteger(456), BEString("nested")})
 
 	if len(beList) != 3 {
 		t.Errorf("Expected length of 3, was '%d'", len(beList))
 	}
-	if beList.BEString() != "li123e12:Hello World!li456e6:nestedee" {
-		t.Errorf("Expected BEString() of 'li123e12:Hello World!li456e6:nestede', was '%s'", beList.BEString())
+	if beList.Encode() != "li123e12:Hello World!li456e6:nestedee" {
+		t.Errorf("Expected Encode() of 'li123e12:Hello World!li456e6:nestede', was '%s'", beList.Encode())
 	}
 }
 
-func TestBEncodeDictionaryBasics(t *testing.T) {
-	beDict := BEncodeDictionary{
-		"KeyA": BEncodeInteger(123),
-		"KeyB": BEncodeString("Hello World!"),
+func TestBEDictionaryBasics(t *testing.T) {
+	beDict := BEDictionary{
+		"KeyA": BEInteger(123),
+		"KeyB": BEString("Hello World!"),
 	}
 	if len(beDict) != 2 {
 		t.Errorf("Expected length of 2, was '%d'", len(beDict))
 	}
-	if beDict.BEString() != "d4:KeyAi123e4:KeyB12:Hello World!e" {
-		t.Errorf("Expected BEString() of 'd4:KeyAi123e4:KeyB12:Hello World!e', was '%s'", beDict.BEString())
+	if beDict.Encode() != "d4:KeyAi123e4:KeyB12:Hello World!e" {
+		t.Errorf("Expected Encode() of 'd4:KeyAi123e4:KeyB12:Hello World!e', was '%s'", beDict.Encode())
 	}
 
-	beDict["KeyC"] = BEncodeList{BEncodeInteger(456), BEncodeString("nested")}
+	beDict["KeyC"] = BEList{BEInteger(456), BEString("nested")}
 
 	if len(beDict) != 3 {
 		t.Errorf("Expected length of 3, was '%d'", len(beDict))
 	}
-	if beDict.BEString() != "d4:KeyAi123e4:KeyB12:Hello World!4:KeyCli456e6:nestedee" {
-		t.Errorf("Expected BEString() of 'd4:KeyAi123e4:KeyB12:Hello World!4:KeyCli456e6:nestedee', was '%s'", beDict.BEString())
+	if beDict.Encode() != "d4:KeyAi123e4:KeyB12:Hello World!4:KeyCli456e6:nestedee" {
+		t.Errorf("Expected Encode() of 'd4:KeyAi123e4:KeyB12:Hello World!4:KeyCli456e6:nestedee', was '%s'", beDict.Encode())
 	}
 }
 
-func TestBEncodeDictionaryKeySorting(t *testing.T) {
+func TestBEDictionaryKeySorting(t *testing.T) {
 	// BitTorrent spec says the keys should be sorted in string order...
-	beDict := BEncodeDictionary{
-		"ZZZ": BEncodeString("zzz"),
-		"AAA": BEncodeString("aaa"),
-		"MMM": BEncodeString("mmm"),
+	beDict := BEDictionary{
+		"ZZZ": BEString("zzz"),
+		"AAA": BEString("aaa"),
+		"MMM": BEString("mmm"),
 	}
 
-	if beDict.BEString() != "d3:AAA3:aaa3:MMM3:mmm3:ZZZ3:zzze" {
-		t.Errorf("Expected BEString() of 'd3:AAA3:aaa3:MMM3:mmm3:ZZZ3:zzze', was '%s'", beDict.BEString())
+	if beDict.Encode() != "d3:AAA3:aaa3:MMM3:mmm3:ZZZ3:zzze" {
+		t.Errorf("Expected Encode() of 'd3:AAA3:aaa3:MMM3:mmm3:ZZZ3:zzze', was '%s'", beDict.Encode())
 	}
 
 }
@@ -88,7 +88,7 @@ func TestDecodeHappyPath(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	beInteger := be.(BEncodeInteger)
+	beInteger := be.(BEInteger)
 	if beInteger != 1234 {
 		t.Errorf("Expected value of 1234, was '%d'", beInteger)
 	}
@@ -97,7 +97,7 @@ func TestDecodeHappyPath(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	beString := be.(BEncodeString)
+	beString := be.(BEString)
 	if beString != "Hello World!" {
 		t.Errorf("Expected value of 'Hello World!', was '%s'", beString)
 	}
@@ -106,30 +106,30 @@ func TestDecodeHappyPath(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	beList := be.(BEncodeList)
+	beList := be.(BEList)
 	if len(beList) != 2 {
 		t.Errorf("Expected length of 2, was '%d'", len(beList))
 	}
-	if beList[0].(BEncodeInteger) != 123 {
-		t.Errorf("Expected value of 123, was '%d'", beList[0].(BEncodeInteger))
+	if beList[0].(BEInteger) != 123 {
+		t.Errorf("Expected value of 123, was '%d'", beList[0].(BEInteger))
 	}
-	if beList[1].(BEncodeString) != "Hello World!" {
-		t.Errorf("Expected value of 'Hello World!', was '%s'", beList[1].(BEncodeString))
+	if beList[1].(BEString) != "Hello World!" {
+		t.Errorf("Expected value of 'Hello World!', was '%s'", beList[1].(BEString))
 	}
 
 	be, err = Decode("d4:KeyAi123e4:KeyB12:Hello World!e")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	beDict := be.(BEncodeDictionary)
+	beDict := be.(BEDictionary)
 	if len(beDict) != 2 {
 		t.Errorf("Expected length of 2, was '%d'", len(beDict))
 	}
-	if beDict["KeyA"].(BEncodeInteger) != 123 {
-		t.Errorf("Expected value of 123, was '%d'", beDict["KeyA"].(BEncodeInteger))
+	if beDict["KeyA"].(BEInteger) != 123 {
+		t.Errorf("Expected value of 123, was '%d'", beDict["KeyA"].(BEInteger))
 	}
-	if beDict["KeyB"].(BEncodeString) != "Hello World!" {
-		t.Errorf("Expected value of 'Hello World!', was '%s'", beDict["KeyB"].(BEncodeString))
+	if beDict["KeyB"].(BEString) != "Hello World!" {
+		t.Errorf("Expected value of 'Hello World!', was '%s'", beDict["KeyB"].(BEString))
 	}
 }
 
@@ -141,19 +141,19 @@ func TestDecodeDeepEmbedsAndWeirdStuff(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	beList := be.(BEncodeList)
+	beList := be.(BEList)
 	if len(beList) != 1 {
 		t.Errorf("Expected length of 1, was '%d'", len(beList))
 	}
-	if beList[0].(BEncodeList)[0].(BEncodeList)[0].(BEncodeList)[0].(BEncodeList)[0].(BEncodeString) != "very deep" {
+	if beList[0].(BEList)[0].(BEList)[0].(BEList)[0].(BEList)[0].(BEString) != "very deep" {
 		t.Error("Expected value of 'very deep'")
 	}
 
-	be, err = Decode("i1234eEverything after valid BEncode will be ignored with no error")
+	be, err = Decode("i1234eEverything after valid BE will be ignored with no error")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	beInteger := be.(BEncodeInteger)
+	beInteger := be.(BEInteger)
 	if beInteger != 1234 {
 		t.Errorf("Expected value of 1234, was '%d'", beInteger)
 	}
@@ -163,7 +163,7 @@ func TestDecodeDeepEmbedsAndWeirdStuff(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	beList = be.(BEncodeList)
+	beList = be.(BEList)
 	if len(beList) != 0 {
 		t.Errorf("Expected length of 0, was '%d'", len(beList))
 	}
@@ -173,7 +173,7 @@ func TestDecodeDeepEmbedsAndWeirdStuff(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	beDict := be.(BEncodeDictionary)
+	beDict := be.(BEDictionary)
 	if len(beDict) != 0 {
 		t.Errorf("Expected length of 0, was '%d'", len(beDict))
 	}
@@ -187,7 +187,7 @@ func TestDecodeGeneralFailureModes(t *testing.T) {
 		t.Error("Expected error when decoding empty string")
 	}
 
-	_, err = Decode("This is not the BEncode you are looking for")
+	_, err = Decode("This is not the BE you are looking for")
 	if err == nil {
 		t.Error("Expected error when decoding bogus string")
 	}
