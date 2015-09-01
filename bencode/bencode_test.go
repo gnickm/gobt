@@ -1,4 +1,4 @@
-package BE
+package bencode
 
 import (
 	"testing"
@@ -9,8 +9,8 @@ func TestBEIntegerBasics(t *testing.T) {
 	if beInt != 123 {
 		t.Errorf("Expected Value of '123', was '%s'", beInt)
 	}
-	if beInt.Encode() != "i123e" {
-		t.Errorf("Expected Encode() of 'i123e', was '%s'", beInt.Encode())
+	if beInt.BEncode() != "i123e" {
+		t.Errorf("Expected BEncode() of 'i123e', was '%s'", beInt.BEncode())
 	}
 }
 
@@ -19,8 +19,8 @@ func TestBEStringBasics(t *testing.T) {
 	if beStr != "Hello World!" {
 		t.Errorf("Expected Value of 'Hello World', was '%s'", beStr)
 	}
-	if beStr.Encode() != "12:Hello World!" {
-		t.Errorf("Expected Encode() of '12:Hello World!', was '%s'", beStr.Encode())
+	if beStr.BEncode() != "12:Hello World!" {
+		t.Errorf("Expected BEncode() of '12:Hello World!', was '%s'", beStr.BEncode())
 	}
 }
 
@@ -29,8 +29,8 @@ func TestBEListBasics(t *testing.T) {
 	if len(beList) != 2 {
 		t.Errorf("Expected length of 2, was '%d'", len(beList))
 	}
-	if beList.Encode() != "li123e12:Hello World!e" {
-		t.Errorf("Expected Encode() of 'li123e12:Hello World!e', was '%s'", beList.Encode())
+	if beList.BEncode() != "li123e12:Hello World!e" {
+		t.Errorf("Expected BEncode() of 'li123e12:Hello World!e', was '%s'", beList.BEncode())
 	}
 
 	// Can append lists to lists
@@ -39,8 +39,8 @@ func TestBEListBasics(t *testing.T) {
 	if len(beList) != 3 {
 		t.Errorf("Expected length of 3, was '%d'", len(beList))
 	}
-	if beList.Encode() != "li123e12:Hello World!li456e6:nestedee" {
-		t.Errorf("Expected Encode() of 'li123e12:Hello World!li456e6:nestede', was '%s'", beList.Encode())
+	if beList.BEncode() != "li123e12:Hello World!li456e6:nestedee" {
+		t.Errorf("Expected BEncode() of 'li123e12:Hello World!li456e6:nestede', was '%s'", beList.BEncode())
 	}
 }
 
@@ -52,8 +52,8 @@ func TestBEDictionaryBasics(t *testing.T) {
 	if len(beDict) != 2 {
 		t.Errorf("Expected length of 2, was '%d'", len(beDict))
 	}
-	if beDict.Encode() != "d4:KeyAi123e4:KeyB12:Hello World!e" {
-		t.Errorf("Expected Encode() of 'd4:KeyAi123e4:KeyB12:Hello World!e', was '%s'", beDict.Encode())
+	if beDict.BEncode() != "d4:KeyAi123e4:KeyB12:Hello World!e" {
+		t.Errorf("Expected BEncode() of 'd4:KeyAi123e4:KeyB12:Hello World!e', was '%s'", beDict.BEncode())
 	}
 
 	beDict["KeyC"] = BEList{BEInteger(456), BEString("nested")}
@@ -61,8 +61,8 @@ func TestBEDictionaryBasics(t *testing.T) {
 	if len(beDict) != 3 {
 		t.Errorf("Expected length of 3, was '%d'", len(beDict))
 	}
-	if beDict.Encode() != "d4:KeyAi123e4:KeyB12:Hello World!4:KeyCli456e6:nestedee" {
-		t.Errorf("Expected Encode() of 'd4:KeyAi123e4:KeyB12:Hello World!4:KeyCli456e6:nestedee', was '%s'", beDict.Encode())
+	if beDict.BEncode() != "d4:KeyAi123e4:KeyB12:Hello World!4:KeyCli456e6:nestedee" {
+		t.Errorf("Expected BEncode() of 'd4:KeyAi123e4:KeyB12:Hello World!4:KeyCli456e6:nestedee', was '%s'", beDict.BEncode())
 	}
 }
 
@@ -74,8 +74,8 @@ func TestBEDictionaryKeySorting(t *testing.T) {
 		"MMM": BEString("mmm"),
 	}
 
-	if beDict.Encode() != "d3:AAA3:aaa3:MMM3:mmm3:ZZZ3:zzze" {
-		t.Errorf("Expected Encode() of 'd3:AAA3:aaa3:MMM3:mmm3:ZZZ3:zzze', was '%s'", beDict.Encode())
+	if beDict.BEncode() != "d3:AAA3:aaa3:MMM3:mmm3:ZZZ3:zzze" {
+		t.Errorf("Expected BEncode() of 'd3:AAA3:aaa3:MMM3:mmm3:ZZZ3:zzze', was '%s'", beDict.BEncode())
 	}
 
 }
