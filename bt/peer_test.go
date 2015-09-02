@@ -70,6 +70,7 @@ func TestNewPeerErrorConditions(t *testing.T) {
 func TestPeerAddInfoHash(t *testing.T) {
 	hash1 := InfoHash("aaaaaaaaaaaaaaaaaaaa")
 	hash2 := InfoHash("bbbbbbbbbbbbbbbbbbbb")
+	badHash := InfoHash("bad InfoHash")
 	peer, _ := NewPeer(nil, "1.2.3.4", 1234)
 
 	if len(peer.infoHashList) != 0 {
@@ -89,5 +90,13 @@ func TestPeerAddInfoHash(t *testing.T) {
 	peer.AddInfoHash(hash2)
 	if len(peer.infoHashList) != 2 {
 		t.Errorf("infoHashList length should be 2 after adding new hash")
+	}
+
+	err := peer.AddInfoHash(badHash)
+	if len(peer.infoHashList) != 2 {
+		t.Errorf("infoHashList length should still be 2 after adding a bad hash")
+	}
+	if err == nil {
+		t.Errorf("Expected error after adding a bad hash")
 	}
 }

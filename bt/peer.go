@@ -29,14 +29,18 @@ type Peer struct {
 	infoHashList []InfoHash
 }
 
-func (peer *Peer) AddInfoHash(hash InfoHash) {
+func (peer *Peer) AddInfoHash(hash InfoHash) error {
+	if !hash.Validate() {
+		return errors.New("AddInfoHash: Invalid InfoHash")
+	}
 	for _, existingHash := range peer.infoHashList {
 		if existingHash == hash {
 			// Already exists
-			return
+			return nil
 		}
 	}
 	peer.infoHashList = append(peer.infoHashList, hash)
+	return nil
 }
 
 func NewPeer(inPeerId *PeerId, ipString string, port int) (*Peer, error) {
