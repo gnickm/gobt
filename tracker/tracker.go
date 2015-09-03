@@ -24,18 +24,22 @@ type AnnounceRequest struct {
 	respChan    chan bencode.BEDictionary
 }
 
-func handleAnnounce(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
+func makeAnnounceHandler(reqChan chan AnnounceRequest) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var responseDict bencode.BEDictionary
+		ar, err := parseAnnounceRequest(r)
+		if err != nil {
+			responseDict = bencode.BEDictionary{}
+			responseDict["failure message"] = bencode.BEString(err.Error())
+		} else {
+			reqChan <- *ar
+			responseDict = <-ar.respChan
+		}
 
-	responseDict := bencode.BEDictionary{}
-	ar, err := parseAnnounceRequest(r)
-	if err != nil {
-		responseDict["failure message"] = bencode.BEString(err.Error())
-	} else {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		io.WriteString(w, responseDict.BEncode())
 	}
-
-	io.WriteString(w, responseDict.BEncode())
 }
 
 func parseAnnounceRequest(r *http.Request) (*AnnounceRequest, error) {
@@ -102,6 +106,7 @@ func parseAnnounceRequest(r *http.Request) (*AnnounceRequest, error) {
 }
 
 func main() {
-	http.HandleFunc("/announce", handleAnnounce)
+	announceReqChan := make(chan AnnounceRequest)
+	http.HandleFunc("/announce", makeAnnounceHandler(announceReqChan))
 	http.ListenAndServe(":80", nil)
 }
