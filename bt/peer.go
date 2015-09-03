@@ -23,23 +23,23 @@ func RandomPeerId() PeerId {
 // Peer type --------------------------------------------------------
 
 type Peer struct {
-	id           PeerId
-	ip           net.IP
-	port         int
-	infoHashList []InfoHash
+	Id           PeerId
+	Ip           net.IP
+	Port         int
+	InfoHashList []InfoHash
 }
 
 func (peer *Peer) AddInfoHash(hash InfoHash) error {
 	if !hash.Validate() {
 		return errors.New("AddInfoHash: Invalid InfoHash")
 	}
-	for _, existingHash := range peer.infoHashList {
+	for _, existingHash := range peer.InfoHashList {
 		if existingHash == hash {
 			// Already exists
 			return nil
 		}
 	}
-	peer.infoHashList = append(peer.infoHashList, hash)
+	peer.InfoHashList = append(peer.InfoHashList, hash)
 	return nil
 }
 

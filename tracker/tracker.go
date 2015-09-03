@@ -24,6 +24,15 @@ type AnnounceRequest struct {
 	respChan    chan bencode.BEDictionary
 }
 
+func main() {
+	announceReqChan := make(chan AnnounceRequest)
+
+	go requestProcessor(announceReqChan)
+
+	http.HandleFunc("/announce", makeAnnounceHandler(announceReqChan))
+	http.ListenAndServe(":80", nil)
+}
+
 func makeAnnounceHandler(reqChan chan AnnounceRequest) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var responseDict bencode.BEDictionary
@@ -105,8 +114,20 @@ func parseAnnounceRequest(r *http.Request) (*AnnounceRequest, error) {
 	return &ar, nil
 }
 
-func main() {
-	announceReqChan := make(chan AnnounceRequest)
-	http.HandleFunc("/announce", makeAnnounceHandler(announceReqChan))
-	http.ListenAndServe(":80", nil)
+func requestProcessor(announceReqChan chan AnnounceRequest) {
+	peerMap := make(map[bt.PeerId]bt.Peer)
+	for {
+		var peer bt.Peer
+		var ok bool
+
+		// Block until we get an announce request
+		ar := <-announceReqChan
+
+		// Look up the peer, add it if missing
+		if peer, ok = peerMap[ar.peerId]; !ok {
+			peer = bt.Peer{ar.peerId, ar.ip, ar.port, []bt.InfoHash{}}
+			peerMap[ar.peerId] = peer
+		}
+		peer.AddInfoHash(ar.infoHash)
+	}
 }
