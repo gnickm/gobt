@@ -24,6 +24,13 @@ type AnnounceRequest struct {
 	respChan    chan bencode.BEDictionary
 }
 
+type PeerEntry struct {
+	peer       *bt.Peer
+	downloaded int
+	left       int
+	uploaded   int
+}
+
 func main() {
 	announceReqChan := make(chan AnnounceRequest)
 
@@ -115,19 +122,40 @@ func parseAnnounceRequest(r *http.Request) (*AnnounceRequest, error) {
 }
 
 func requestProcessor(announceReqChan chan AnnounceRequest) {
-	peerMap := make(map[bt.PeerId]bt.Peer)
+	torrentMap := make(map[bt.InfoHash]map[bt.PeerId]PeerEntry)
 	for {
-		var peer bt.Peer
+		var peerEntry PeerEntry
+		var peerMap map[bt.PeerId]PeerEntry
 		var ok bool
+		var announceResp bencode.BEDictionary
 
 		// Block until we get an announce request
 		ar := <-announceReqChan
 
-		// Look up the peer, add it if missing
-		if peer, ok = peerMap[ar.peerId]; !ok {
-			peer = bt.Peer{ar.peerId, ar.ip, ar.port, []bt.InfoHash{}}
-			peerMap[ar.peerId] = peer
+		// Look up peer map for this torrent, add it if missing
+		if peerMap, ok = torrentMap[ar.infoHash]; !ok {
+			peerMap = make(map[bt.PeerId]PeerEntry)
 		}
-		peer.AddInfoHash(ar.infoHash)
+
+		// Look up the peer, add it if missing
+		if peerEntry, ok = peerMap[ar.peerId]; !ok {
+			peer := bt.Peer{ar.peerId, ar.ip, ar.port, []bt.InfoHash{}}
+			peerEntry := PeerEntry{
+				&peer,
+				ar.downloaded,
+				ar.left,
+				ar.uploaded,
+			}
+			peerMap[ar.peerId] = peerEntry
+		}
+		peerEntry.peer.AddInfoHash(ar.infoHash)
+
+		pickedPeerList := pickPeers(peerMap)
+
+		if ar.compactMode {
+			ar.respChan <- makeCompactAnnounceResponse(pickedPeerList)
+		} else {
+			ar.respChan <- makeFullAnnounceResponse(pickedPeerList)
+		}
 	}
 }
